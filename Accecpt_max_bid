@@ -1,0 +1,69 @@
+package TEST;
+
+import static io.restassured.RestAssured.baseURI;
+import static io.restassured.RestAssured.given;
+
+import org.apache.commons.logging.impl.LogFactoryImpl;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.testng.Assert;
+
+import io.restassured.response.Response;
+
+public class test_accept_max_bid extends APINeedTesting{
+    
+    public String creRequest1(String... request) {
+		LogInTest login = new LogInTest();
+		String currentAccount = login.creRequest(request[0], request[1]);
+		login.callAPI(currentAccount);
+		JSONObject data = new JSONObject(login.dataResponse);
+		String access_token = data.getString("access_token").toString();
+		return access_token;
+	
+	}
+
+	public String creRequest2(String... request) {
+		JSONObject req = new JSONObject();
+		req.put("selling_info", request[0]);
+		return req.toString();
+	
+	}
+	
+	public void callAPI(String access_token, String news) {
+		baseURI = "https://auctions-app-2.herokuapp.com/";
+		Response response = 
+				given()
+					.header("Authorization", "Bearer" + access_token)
+					.body(news)
+					.contentType("application/json")
+				.when()
+					.get("api/bids/1");
+		
+		JSONObject rep = new JSONObject(response.getBody().asString());
+		this.codeResponse = Integer.parseInt(rep.get("code").toString());
+		this.messageResponse = rep.get("message").toString();
+		this.dataResponse = rep.get("data").toString();
+
+		System.out.println(response.getBody().asPrettyString());
+        }
+
+        public void test1() {
+            System.out.println("Test 1 in Accept_max_bid: Input is numeric value, the code should be 1000 and message is OK ");
+            
+            //Unit 1
+            try {			
+                String access_token = this.creRequest1(
+                        "auto@gmail.com"							
+                        ,"123456");
+    
+                String input_info = this.creRequest2("VietAnh");
+                this.callAPI(access_token, input_info);
+                
+                Assert.assertEquals(this.codeResponse, 1000);
+                Assert.assertEquals(this.messageResponse, "OK");
+                System.out.println("Unit 1: Passed");
+            } catch (AssertionError e) {
+                System.out.println("Unit 1: Failed");
+            }
+         }
+}
